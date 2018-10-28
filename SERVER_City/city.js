@@ -1,25 +1,31 @@
 // .env Variables
 require("dotenv").config({path: "../.env"});
 
-//server tools
-let express = require("express");
-let socket = require("socket.io");
+//socket.io setup
+let server = require("http").createServer();
+let io = require("socket.io")(server);
+let ioAuth = require("socketio-auth");
 
-//express setup
-let app = express();
-let server = app.listen(process.env.SERVER_PORT, () => {
-	console.log("Listening to requests on port " + process.env.SERVER_PORT);
+ioAuth(io, {
+	authenticate: function(socket, data, callback) {
+		return callback(null, data.SERVER_PASS_KEY === process.env.SERVER_PASS_KEY);
+	},
+	postAuthenticate: function(socket, data) {
+		console.log("Authenticated: " + data.username);
+		socket.client.username = data.username;
+	}
 });
 
 //shared code
 let calcRandom = require('../Shared/calc_random');
 
-//socket.io setup
-let io = socket(server);
-
 //TODO: isolate these responses to specific bots
 io.on("connection", async (socket) => {
 	console.log("made socket connection");
+
+	socket.on("disconnect", async () => {
+		console.log(socket.client.username + " disconnected");
+	});
 
 	//update the playerbase's stamina on command
 	socket.on("updateStamina", async ({ userID, data }) => {
@@ -112,3 +118,7 @@ io.on("connection", async (socket) => {
 		}
 	});
 });
+
+//listen
+server.listen(process.env.SERVER_PORT);
+console.log("listening on port " + process.env.SERVER_PORT);

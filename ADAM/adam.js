@@ -59,6 +59,8 @@ client.on('ready', async () => {
 
 	console.log("Logged in as: " + client.user.username + " - " + client.user.id);
 
+	shared.ConnectToServer(client.user.username, process.env.SERVER_ADDRESS, process.env.SERVER_PORT, process.env.SERVER_PASS_KEY);
+
 	//ADAM updates stamina (1) and health by 1% every 2 min.
 	cron.schedule('*/2 * * * *', () => { //TODO: move this to Mori
 		console.log('Updating STAMINA every 2 min.');

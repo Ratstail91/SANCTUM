@@ -1,10 +1,28 @@
 //initialize the exports
 exports = module.exports = {};
 
-require("dotenv").config({path: "../.env"});
+//global, because why not?
+let socketClient = require("socket.io-client");
+let io;
+let initialized = false;
 
-//socket tools
-let io = require("socket.io-client")(`${process.env.SERVER_ADDRESS}:${process.env.SERVER_PORT}`);
+//ConnectToServer
+//username - the bot's username
+//address - the server's web address
+//port - the server's port
+//pass - the server's passcode
+exports.ConnectToServer = function(username, address, port, pass) { //NOTE: this doesn't need to be in a function, I just want to display the username server-side
+	//prevent double-initialization
+	if (initialized) return;
+
+	//socket tools
+	io = socketClient(`${address}:${port}`);
+	io.on("connect", () => io.emit("authentication", {SERVER_PASS_KEY: pass, username: username}) );
+	io.on("authenticated", () => console.log("Authenticated with server: " + `${address}:${port}`));
+	io.on("disconnect", () => console.log("disconnected from server: " + `${address}:${port}`));
+
+	initialized = true;
+}
 
 //SendServerData
 //dataType - the type of data being sent
