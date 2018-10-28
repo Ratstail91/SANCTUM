@@ -135,7 +135,7 @@ exports.ProcessGiveCommand = function(client, message, args, dialog) {
 		dataRequest.OnServerData("transfer", handleResponse, message.author.id, targetMember.id, amount);
 	}
 
-	dataRequest.OnServerData("account", handleResponse, message.author.id);
+	dataRequest.OnServerData("wallet", handleResponse, message.author.id);
 }
 
 //ProcessStatsCommand
@@ -182,9 +182,9 @@ exports.PrintStats = function(client, member, channel, stats) {
 
 	// Forms stats into a string
 	let levelText = `:level: **${stats.level}**`; //NOTE: I don't like backticks
-	let levelProgress = `(${stats.levelPercent}%)`;
+	let levelProgress = `(${stats.levelProgress}%)`;
 	let crystalText = `:crystals: **${stats.wallet}**`;
-	let cannisterText = `:cannister: **${stats.statPoints}**`;
+	let cannisterText = `:cannister: **${stats.upgradePoints}**`;
 	let userStats = "```" + `STR: ${stats.strength} | SPD: ${stats.speed} | STAM: ${stats.stamina}/${stats.maxStamina} | HP: ${stats.health}/${stats.maxHealth}` + "```";
 
 	// Says level is maxed out if it is LVL 30+
@@ -222,13 +222,13 @@ exports.HandleLevelUp = function(client, member, channel, dialog) {
 	}
 
 	// Sees if the user is supposed to level up
-	let handleResponse = function(response, level, statPoints) {
+	let handleResponse = function(response, level, upgradePoints) {
 		//handle levelling up
 		if (response === "levelUp" || response === "RankUp") {
 			if (level >= process.env.RANK_3_THRESHOLD) {
 				shared.SendPublicMessage(client, member.user, channel, dialog("levelUpCap", dialog("levelUpCapRemark"), level));
 			} else {
-				shared.SendPublicMessage(client, member.user, channel, dialog("LevelUp", dialog("levelUpRemark"), level, statPoints));
+				shared.SendPublicMessage(client, member.user, channel, dialog("LevelUp", dialog("levelUpRemark"), level, upgradePoints));
 			}
 		}
 	}

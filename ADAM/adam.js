@@ -140,7 +140,7 @@ function processBasicCommands(client, message) {
 			return true;
 
 		case "wallet": //DEBUGGING
-			shared.OnServerData("account", (amount) => {
+			shared.OnServerData("wallet", (amount) => {
 				shared.SendPublicMessage(client, message.channel, "Wallet: " + amount);
 			}, message.author.id);
 			return true;

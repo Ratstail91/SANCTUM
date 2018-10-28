@@ -45,7 +45,7 @@ io.on("connection", async (socket) => {
 	socket.on("updateStamina", handleUpdateStamina);
 	socket.on("conversion", handleConversion);
 	socket.on("checkin", handleCheckin);
-	socket.on("account", handleAccount);
+	socket.on("wallet", handleWallet);
 	socket.on("transfer", handleTransfer);
 	socket.on("userStats", handleUserStats);
 	socket.on("addXP", handleAddXP);
@@ -144,7 +144,7 @@ async function handleCheckin({ data }, fn) {
 }
 
 //handle account requests
-async function handleAccount({ data }, fn) {
+async function handleWallet({ data }, fn) {
 	//data[0] = ID of the person to check
 
 	let query = `SELECT wallet FROM users WHERE userID='${data[0]}' LIMIT 1;`;
@@ -206,24 +206,29 @@ async function handleUserStats({ data }, fn) {
 	console.log("received a userStats request...");
 	//data[0] = user ID
 
-	//NOTE: build a temporary structure to pass back
-	let stats = {
-		strength: 0,
-		speed: 0,
-		stamina: 0,
-		health: 0,
-		maxStamina: 0,
-		maxHealth: 0,
-		wallet: 0,
-		experience: 0,
-		level: 0,
-		levelPercent: 0,
-		statPoints: 0
-	};
+	//parameters to fn: stat structure
 
-	if (fn) {
-		fn(stats);
-	}
+	let query = `SELECT level, experience, maxHealth, health, maxStamina, stamina, strength, speed, upgradePoints, wallet FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+
+		let stats = {
+			level: result[0].level,
+			experience: result[0].experience,
+			levelProgress: calculateLevelProgress(result[0].experience),
+			maxHealth: result[0].maxHealth,
+			health: result[0].health,
+			maxStamina: result[0].maxStamina,
+			stamina: result[0].stamina,
+			strength: result[0].strength,
+			speed: result[0].speed,
+			upgradePoints: result[0].upgradePoints,
+			wallet: result[0].wallet
+		};
+
+		//TODO: log this
+		return fn(stats);
+	});
 }
 
 //DEBUGGING?
@@ -242,4 +247,19 @@ async function handleLevelUp({ data }, fn) {
 	if (fn) {
 		fn("none", 0, 0); //["none", "levelUp"], level, statPoints
 	}
+}
+
+//utility functions
+function calculateLevel(experience) {
+	const levelBase = 1.2;
+	return levelBase * Math.sqrt(experience);
+}
+
+function calculateLevelProgress(experience) {
+	let level = calculateLevel(experience);
+
+	let base = Math.floor(level);
+	let decimal = level - base;
+
+	return Math.floor(decimal * 100); //percentage
 }
