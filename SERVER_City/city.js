@@ -16,6 +16,21 @@ ioAuth(io, {
 	}
 });
 
+//mysql
+let mysql = require("mysql");
+
+let dbConnection = mysql.createConnection({
+	host: process.env.DATABASE_HOST,
+	user: process.env.DATABASE_USER,
+	password: process.env.DATABASE_PASSWORD
+});
+
+dbConnection.connect((err) => {
+	if (err) throw err;
+	console.log("Connected to the database");
+	dbConnection.query("USE sanctum;");
+});
+
 //shared code
 let calcRandom = require('../Shared/calc_random');
 
@@ -110,12 +125,54 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("conversion", async ({ data }, fn) => {
-		console.log("received a conversion request...");
+		console.log("received a conversion request... " + data);
 		//data[0] = user ID
+		//data[1] = factionRole
 
-		if (fn) {
-			fn("newUser"); //["joined", "conversionLocked", "newUser"]
-		}
+		//possible arguments to fn: ["joined", "alreadyJoined", "conversionLocked", "newUser"]
+
+		//find the last time this user converted
+		let query = `SELECT faction FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+
+		return dbConnection.query(query, (err, result) => {
+			if (err) throw err;
+
+			//check if this is a new user
+			if (result.length === 0) {
+				let query = `INSERT INTO users (userID, faction, factionChanged) VALUES (${data[0]}, ${data[1]}, NOW());`;
+				return dbConnection.query(query, (err, result) => {
+					if (err) throw err;
+					console.log("new user");
+					return fn("newUser");
+				});
+			}
+
+			//check if already joined this faction
+			if (result[0].faction == data[1]) { //faction == factionRole
+				console.log("alreadyJoined");
+				return fn("alreadyJoined");
+			}
+
+			//check if enough time has passed to join a new faction
+			let query = `SELECT NOW() - factionChanged FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+
+			return dbConnection.query(query, (err, result) => {
+				if (err) throw err;
+				console.log(result[0]['NOW() - factionChanged ']);
+				if(result[0]['NOW() - factionChanged '] < 60) { //faction time change in seconds TODO: 7 days
+					console.log("conversionLocked");
+					return fn("conversionLocked"); //too soon
+				} else {
+					//update the database with the join
+					query = `UPDATE users SET faction = ${data[1]}, factionChanged = NOW() WHERE userID='${data[0]}';`;
+					return dbConnection.query(query, (err, result) => {
+						if (err) throw err;
+						console.log("joined");
+						return fn("joined");
+					});
+				}
+			})
+		});
 	});
 });
 

@@ -57,6 +57,8 @@ client.on('ready', async () => {
 	}
 
 	console.log("Logged in as: " + client.user.username + " - " + client.user.id);
+
+	shared.ConnectToServer(client.user.username, process.env.SERVER_ADDRESS, process.env.SERVER_PORT, process.env.SERVER_PASS_KEY);
 });
 
 // Create an event listener for messages

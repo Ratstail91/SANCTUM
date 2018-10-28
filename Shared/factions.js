@@ -77,11 +77,6 @@ exports.ChangeFaction = function(client, factionRole, channel, member, fn) {
 		member = guild.members.get(user.id);
 	}
 
-	if (member.roles.has(factionRole)) {
-		//can't change to this faction
-		fn("alreadyJoined");
-	}
-
 	let handleResponse = async function(response) {
 		if (response === "conversionLocked") { //can't change too fast
 			fn(response);
@@ -97,5 +92,5 @@ exports.ChangeFaction = function(client, factionRole, channel, member, fn) {
 		fn(response);
 	};
 
-	dataRequest.OnServerData("conversion", handleResponse, member.user.id);
+	dataRequest.OnServerData("conversion", handleResponse, member.user.id, factionRole);
 }
