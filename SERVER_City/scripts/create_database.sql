@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
 	strength int NOT NULL DEFAULT 5,
 	speed int NOT NULL DEFAULT 5,
 
+	upgradePoints int NOT NULL DEFAULT 0,
+
 	wallet int NOT NULL DEFAULT 0,
-	upgradePoints int NOT NULL DEFAULT 0
+	lastCheckin DATETIME NULL
 );

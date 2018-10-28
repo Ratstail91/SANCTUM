@@ -139,6 +139,12 @@ function processBasicCommands(client, message) {
 			}
 			return true;
 
+		case "wallet": //DEBUGGING
+			shared.OnServerData("account", (amount) => {
+				shared.SendPublicMessage(client, message.channel, "Wallet: " + amount);
+			}, message.author.id);
+			return true;
+
 		//ADAM and the faction leaders print the intros in the gate
 		//TODO: prune the unneeded intros from each bot
 		case "intro":
