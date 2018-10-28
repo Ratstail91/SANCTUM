@@ -18,7 +18,8 @@ exports.AddXP = function(client, user, amount) {
 //LevelUp
 //client - discord.js client
 //member - member to get the level up
-exports.LevelUp = function(client, member) { //NOTE: why is this called separately?
+//fn - function to pass the result to
+exports.LevelUp = function(client, member, fn) {
 	//handle member strings
 	if (typeof(member) === "string") {
 		//get the member
@@ -32,22 +33,12 @@ exports.LevelUp = function(client, member) { //NOTE: why is this called separate
 	if (client.user.username == process.env.GROUP_B_LEADER_NAME && !member.roles.has(process.env.GROUP_B_ROLE)) return;
 	if (client.user.username == process.env.GROUP_C_LEADER_NAME && !member.roles.has(process.env.GROUP_C_ROLE)) return;
 
-	let response = String(dataRequest.SendServerData("getLevelUp", member.user.id));
-	let responseArray = response.split(",");
-
-	let responseMessage = responseArray[0];
-	let level = Math.floor(parseFloat(responseArray[1]));
-	let statPoints = parseFloat(responseArray[2]);
-
-	let rankUp = exports.RankUp(client, member, level);
-
-	if (rankUp == "rankUp") {
-		return [rankUp, level, statPoints];
-	} else if (responseMessage === "levelup") {
-		return ["levelUp", level, statPoints];
-	} else {
-		return ["", level, statPoints];
+	let handleResponse = function(response, level, statPoints) {
+		let rankUp = exports.RankUp(client, member, level);
+		fn(rankUp === "rankUp" ? rankUp : response, level, statPoints);
 	}
+
+	dataRequest.OnServerData("levelUp", handleResponse, member.user.id);
 }
 
 //GetLevelUp

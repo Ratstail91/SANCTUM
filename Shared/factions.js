@@ -58,7 +58,7 @@ exports.GetFactionChannel = function(factionRole) {
 //factionRole - a faction role
 //channel - discord.js channel OR channel name
 //member - discord.js member
-exports.ChangeFaction = async function(client, factionRole, channel, member) {
+exports.ChangeFaction = function(client, factionRole, channel, member, fn) {
 	//factionRole must be a faction role
 	if (!exports.CheckFaction(factionRole)) {
 		throw "factionRole is not a faction!";
@@ -79,31 +79,23 @@ exports.ChangeFaction = async function(client, factionRole, channel, member) {
 
 	if (member.roles.has(factionRole)) {
 		//can't change to this faction
-		return "alreadyJoined";
+		fn("alreadyJoined");
 	}
 
-	if (dataRequest.LoadServerData("hasConvertedToday", member.user.id) == 1) {
-		//can't change too fast
-		return "hasConvertedToday";
-	}
+	let handleResponse = async function(response) {
+		if (response === "conversionLocked") { //can't change too fast
+			fn(response);
+			return;
+		}
 
-	//Creates a new user
-	var newUserResponse = String(dataRequest.SendServerData("newUser", member.user.id, "New user."));
+		//joins the new faction
+		await member.removeRole(process.env.GROUP_A_ROLE);
+		await member.removeRole(process.env.GROUP_B_ROLE);
+		await member.removeRole(process.env.GROUP_C_ROLE);
+		await member.addRole(factionRole);
 
-	//joins the new faction
-	await member.removeRole(process.env.GROUP_A_ROLE);
-	await member.removeRole(process.env.GROUP_B_ROLE);
-	await member.removeRole(process.env.GROUP_C_ROLE);
-	await member.addRole(factionRole);
+		fn(response);
+	};
 
-	//send the server the info (for logging)
-	dataRequest.SendServerData("conversion", member.user.id, "Converted to " + exports.GetFactionName(factionRole));
-
-	if (newUserResponse === "createdUser") {
-		//send the private welcoming message
-		return newUserResponse;
-	} else {
-		//send the public welcoming message
-		return "joined";
-	}
+	dataRequest.OnServerData("conversion", handleResponse, member.user.id);
 }

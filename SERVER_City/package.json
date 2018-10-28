@@ -1,0 +1,20 @@
+{
+  "name": "server_city",
+  "version": "1.0.0",
+  "description": "",
+  "main": "city.js",
+  "scripts": {
+    "start": "forever -o forever.log -e error.log start city.js",
+    "restart": "forever -o forever.log -e error.log restart city.js",
+    "stop": "forever stop city.js",
+    "node": "node city.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^6.1.0",
+    "express": "^4.16.4",
+    "forever": "^0.15.3",
+    "socket.io": "^2.1.1"
+  }
+}

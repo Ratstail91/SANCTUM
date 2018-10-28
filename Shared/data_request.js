@@ -2,16 +2,22 @@
 exports = module.exports = {};
 
 require("dotenv").config({path: "../.env"});
-let request = require("sync-request");
 
-exports.LoadServerData = function(dataType, usersID = "") {
-	let response = request("GET", `${process.env.SERVER_ADDRESS}/getData.php?pk=${process.env.SERVER_PASS_KEY}&dataType=${dataType}&userid=${usersID}`);
-//	console.log(response.getBody());
-	return response.getBody();
+//socket tools
+let io = require("socket.io-client")(`${process.env.SERVER_ADDRESS}:${process.env.SERVER_PORT}`);
+
+//SendServerData
+//dataType - the type of data being sent
+//userID (optional) - the id of the user to be bundled with the data
+//...data (optional) - any data you wish to send
+exports.SendServerData = function(dataType, userID = "", ...data){
+	io.emit(dataType, { userID: userID, data: data });
 }
 
-exports.SendServerData = function(dataType, usersID = "", dataToSend="", dataToSend2 = ""){
-	let response = request("GET", `${process.env.SERVER_ADDRESS}/sendData.php?pk=${process.env.SERVER_PASS_KEY}&dataType=${dataType}&userid=${usersID}&dataToSend=${dataToSend}&dataToSend2=${dataToSend2}`);
-//	console.log(response.getBody());
-	return response.getBody();
+//OnServerData
+//dataType - the type of data being sent and received
+//fn (optional) - the aknowledgement function that is called on the other end (takes the result as an argument)
+//...data (optional) - any data you wish to send
+exports.OnServerData = function(dataType, fn, ...data) {
+	io.emit(dataType, { data: data }, fn);
 }

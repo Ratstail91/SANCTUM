@@ -108,7 +108,8 @@ function processBasicCommands(client, message) {
 			return true;
 
 		case "obsidian":
-			return core.ProcessFactionChangeAttempt(client, message, process.env.GROUP_A_ROLE, dialog, "Obsidian");
+			core.ProcessFactionChangeAttempt(client, message, process.env.GROUP_A_ROLE, dialog, "Obsidian");
+			return true;
 
 		//ADAM and the faction leaders print the intros in the gate
 		case "introobsidian":

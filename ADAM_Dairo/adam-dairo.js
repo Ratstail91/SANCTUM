@@ -108,7 +108,8 @@ function processBasicCommands(client, message) {
 			return true;
 
 		case "hand":
-			return core.ProcessFactionChangeAttempt(client, message, process.env.GROUP_C_ROLE, dialog, "Hand");
+			core.ProcessFactionChangeAttempt(client, message, process.env.GROUP_C_ROLE, dialog, "Hand");
+			return true;
 
 		//ADAM and the faction leaders print the intros in the gate
 		case "introhand":

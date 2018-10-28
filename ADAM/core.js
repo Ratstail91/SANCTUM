@@ -3,7 +3,6 @@ exports = module.exports = {};
 let dataRequest = require("../Shared/data_request");
 let discord = require('discord.js');
 let shared = require("../Shared/shared");
-let calcRandom = require('../Shared/calc_random');
 
 //ProcessGameplayCommands
 //client - discord.js client
@@ -17,66 +16,15 @@ exports.ProcessGameplayCommands = function(client, message, dialog) {
 
 	switch (command) {
 		case "checkin":
-			let checkinAmount = calcRandom.Random(4, 9);
-			let checkInResponse = String(dataRequest.SendServerData("checkin", message.author.id, checkinAmount));
-			if (checkInResponse === "available") {
-				shared.SendPublicMessage(client, message.author, message.channel, dialog("checkin", checkinAmount));
-				shared.AddXP(client, message.author, 1); //1XP
-				exports.HandleLevelUp(client, message.member, message.channel, dialog);
-			} else {
-				shared.SendPublicMessage(client, message.channel, dialog("checkinLocked", message.author.id, checkInResponse));
-			}
+			exports.ProcessCheckinCommand(client, message.member, message.channel, dialog);
 			return true;
 
-		case "give": //TODO: fold this code into a function
-			let amount = Math.floor(parseFloat(args[0]));
-
-			if (isNaN(amount)) {
-				shared.SendPublicMessage(client, message.channel, dialog("giveFailed", message.author.id));
-				return true;
-			}
-
-			//not enough
-			if (amount <= 0) {
-				shared.SendPublicMessage(client, message.channel, dialog("giveNotAboveZero", message.author.id));
-				return true;
-			}
-
-			//didn't mention anyone
-			if (message.mentions.members.size == 0) {
-				shared.SendPublicMessage(client, message.channel, dialog("giveInvalidUser", message.author.id));
-				return true;
-			}
-
-			let targetMember = message.mentions.members.first();
-
-			//can't give to yourself
-			if (targetMember.id === message.author.id) {
-				shared.SendPublicMessage(client, message.channel, dialog("giveInvalidUserSelf", message.author.id));
-				return true;
-			}
-
-			let accountBalance = dataRequest.LoadServerData("account", message.author.id);
-
-			//not enough money in account
-			if (accountBalance < amount) {
-				shared.SendPublicMessage(client, message.channel, dialog("giveNotEnoughInAccount", message.author.id));
-				return true;
-			}
-
-			//try to send the money
-			if (dataRequest.SendServerData("transfer", message.author.id, targetMember.id, amount) != "success") {
-				shared.SendPublicMessage(client, message.channel, dialog("giveFailed", message.author.id));
-				return true;
-			}
-
-			//print the success message
-			shared.SendPublicMessage(client, message.author, message.channel, dialog("giveSuccessful", targetMember.id, amount));
+		case "give":
+			exports.ProcessGiveCommand(client, message, args, dialog);
 			return true;
 
 		case "stats":
 			exports.ProcessStatsCommand(client, message.member, message.channel, dialog);
-
 			return true;
 	}
 
@@ -92,29 +40,102 @@ exports.ProcessGameplayCommands = function(client, message, dialog) {
 //factionShorthand - the shorthand name of the new faction (TEMPORARY)
 exports.ProcessFactionChangeAttempt = function(client, message, factionRole, dialog, factionShorthand) {
 	//tailor this for each faction leader?
-	shared.ChangeFaction(client, factionRole, message.channel, message.member)
-		.then(result => {
-			switch (result) {
-				case "alreadyJoined":
-					shared.SendPublicMessage(client, message.channel, dialog("alreadyJoined" + factionShorthand, message.author.id));
-					break;
-				case "hasConvertedToday":
-					shared.SendPublicMessage(client, message.channel, dialog("conversionLocked", message.author.id));
-					break;
-				case "createdUser":
-					shared.SendPublicMessage(client, message.author, shared.GetFactionChannel(factionRole), dialog("newUserPublicMessage", shared.GetFactionName(factionRole), shared.GetFactionChannel(factionRole)));
-					shared.SendPrivateMessage(client, message.author, dialog("newUserPrivateMessage", dialog("newUserPrivateMessageRemark" + factionShorthand)));
-					break;
-				case "joined":
-					shared.SendPublicMessage(client, message.author, message.channel, dialog("join" + factionShorthand));
-					break;
-				default:
-					//DEBUGGING
-					console.log("processFactionChangeAttempt failed:" + result);
+	let handleResponse = async function(response) {
+		switch (response) {
+			case "alreadyJoined":
+				shared.SendPublicMessage(client, message.channel, dialog("alreadyJoined" + factionShorthand, message.author.id));
+				break;
+			case "conversionLocked":
+				shared.SendPublicMessage(client, message.channel, dialog("conversionLocked", message.author.id));
+				break;
+			case "newUser":
+				shared.SendPublicMessage(client, message.author, shared.GetFactionChannel(factionRole), dialog("newUserPublicMessage", shared.GetFactionName(factionRole), shared.GetFactionChannel(factionRole)));
+				shared.SendPrivateMessage(client, message.author, dialog("newUserPrivateMessage", dialog("newUserPrivateMessageRemark" + factionShorthand)));
+				break;
+			case "joined":
+				shared.SendPublicMessage(client, message.author, message.channel, dialog("join" + factionShorthand));
+				break;
+			default:
+				//DEBUGGING
+				console.log("processFactionChangeAttempt failed:" + result);
+		}
+	}
+
+	shared.ChangeFaction(client, factionRole, message.channel, message.member, handleResponse);
+}
+
+//ProcessStatsCommand
+//client - discord.js client
+//member - discord.js member
+//channel - discord.js channel
+//dialog - dialog function
+exports.ProcessCheckinCommand = function(client, member, channel, dialog) {
+	let handleResponse = function(checkinResponse, checkinAmount) {
+		if (checkinResponse === "available") {
+			shared.SendPublicMessage(client, member.user, channel, dialog("checkin", checkinAmount));
+			exports.HandleLevelUp(client, member, channel, dialog);
+		} else {
+			shared.SendPublicMessage(client, channel, dialog("checkinLocked", member.user.id, checkinResponse));
+		}
+	}
+
+	dataRequest.OnServerData("checkin", handleResponse, member.user.id); //ID of the person who checked in TODO: username too
+}
+
+//ProcessStatsCommand
+//client - discord.js client
+//message - discord.js message
+//args - arguments to the give command
+//dialog - dialog function
+exports.ProcessGiveCommand = function(client, message, args, dialog) {
+	let amount = Math.floor(parseFloat(args[0]));
+
+	if (isNaN(amount)) {
+		shared.SendPublicMessage(client, message.channel, dialog("giveFailed", message.author.id));
+		return;
+	}
+
+	//not enough
+	if (amount <= 0) {
+		shared.SendPublicMessage(client, message.channel, dialog("giveNotAboveZero", message.author.id));
+		return;
+	}
+
+	//didn't mention anyone
+	if (message.mentions.members.size == 0) {
+		shared.SendPublicMessage(client, message.channel, dialog("giveInvalidUser", message.author.id));
+		return;
+	}
+
+	let targetMember = message.mentions.members.first();
+
+	//can't give to yourself
+	if (targetMember.id === message.author.id) {
+		shared.SendPublicMessage(client, message.channel, dialog("giveInvalidUserSelf", message.author.id));
+		return;
+	}
+
+	let handleResponse = function(accountBalance) {
+		//not enough money in account
+		if (accountBalance < amount) {
+			shared.SendPublicMessage(client, message.channel, dialog("giveNotEnoughInAccount", message.author.id));
+			return;
+		}
+
+		//try to send the money
+		let handleResponse = function(response) {
+			if (response !== "success") {
+				shared.SendPublicMessage(client, message.channel, dialog("giveFailed", message.author.id));
+			} else {
+				//print the success message
+				shared.SendPublicMessage(client, message.author, message.channel, dialog("giveSuccessful", targetMember.id, amount));
 			}
-		})
-		.catch(console.error);
-	return true;
+		}
+
+		dataRequest.OnServerData("transfer", handleResponse, message.author.id, targetMember.id, amount);
+	}
+
+	dataRequest.OnServerData("account", handleResponse, message.author.id);
 }
 
 //ProcessStatsCommand
@@ -124,49 +145,21 @@ exports.ProcessFactionChangeAttempt = function(client, message, factionRole, dia
 //dialog - dialog function
 exports.ProcessStatsCommand = function(client, member, channel, dialog) {
 	exports.HandleLevelUp(client, member, channel, dialog);
-	let stats = exports.GetStats(member.user);
-	exports.PrintStats(client, member, channel, stats);
+	exports.GetStats(member.user, (stats) => {
+		exports.PrintStats(client, member, channel, stats);
+	});
 }
 
 //GetStats
 //user - discord.js user OR username
-exports.GetStats = function(user) { //Grabs all parameters from server
+//fn - function to pass the stats to
+exports.GetStats = function(user, fn) {
 	//handle user strings
 	if (typeof(user) === "string") {
 		user = client.users.find(item => item.username === user || item.id === user);
 	}
 
-	let userStatsResponse = String(dataRequest.LoadServerData("userStats", user.id)).split(",");
-
-	if (userStatsResponse[0] == "failure") {
-		throw "server returned an error to userStats request";
-	}
-
-	let strength   = parseFloat(userStatsResponse[1]); //TODO: constants representing the player structure instead of [0]
-	let speed      = parseFloat(userStatsResponse[2]);
-	let stamina    = parseFloat(userStatsResponse[3]);
-	let health     = parseFloat(userStatsResponse[4]);
-	let maxStamina = parseFloat(userStatsResponse[5]);
-	let maxHealth  = parseFloat(userStatsResponse[6]);
-	let wallet     = parseFloat(userStatsResponse[7]);
-	let experience = parseFloat(userStatsResponse[8]);
-	let level      = Math.floor(parseFloat(userStatsResponse[9]));
-	let levelPercent = parseFloat(userStatsResponse[10]);
-	let statPoints = parseFloat(userStatsResponse[11]);
-
-	return {
-		strength: strength,
-		speed: speed,
-		stamina: stamina,
-		health: health,
-		maxStamina: maxStamina,
-		maxHealth: maxHealth,
-		wallet: wallet,
-		experience: experience,
-		level: level,
-		levelPercent: levelPercent,
-		statPoints: statPoints
-	};
+	dataRequest.OnServerData("userStats", fn, user.id);
 }
 
 //PrintStats
@@ -229,19 +222,16 @@ exports.HandleLevelUp = function(client, member, channel, dialog) {
 	}
 
 	// Sees if the user is supposed to level up
-	let [levelUpResponse, level, statPoints] = shared.LevelUp(client, member);
-
-	//handle channel strings
-	if (typeof(channel) === "string") {
-		channel = client.channels.find(item => item.name === channel || item.id === channel);
-	}
-
-	//handle levelling up
-	if (levelUpResponse === "levelUp" || levelUpResponse === "RankUp") {
-		if (level >= process.env.RANK_3_THRESHOLD) {
-			shared.SendPublicMessage(client, member.user, channel, dialog("levelUpCap", dialog("levelUpCapRemark"), level));
-		} else {
-			shared.SendPublicMessage(client, member.user, channel, dialog("LevelUp", dialog("levelUpRemark"), level, statPoints));
+	let handleResponse = function(response, level, statPoints) {
+		//handle levelling up
+		if (response === "levelUp" || response === "RankUp") {
+			if (level >= process.env.RANK_3_THRESHOLD) {
+				shared.SendPublicMessage(client, member.user, channel, dialog("levelUpCap", dialog("levelUpCapRemark"), level));
+			} else {
+				shared.SendPublicMessage(client, member.user, channel, dialog("LevelUp", dialog("levelUpRemark"), level, statPoints));
+			}
 		}
 	}
+
+	shared.LevelUp(client, member, handleResponse);
 }
