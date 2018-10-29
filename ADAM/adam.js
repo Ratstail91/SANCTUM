@@ -63,7 +63,7 @@ client.on('ready', async () => {
 
 	//ADAM updates stamina (1) and health by 1% every 2 min.
 	cron.schedule('*/2 * * * *', () => { //TODO: move this to Mori
-		console.log('Updating STAMINA every 2 min.');
+//s		console.log('Updating STAMINA every 2 min.');
 		shared.SendServerData("updateStamina");
 	});
 });

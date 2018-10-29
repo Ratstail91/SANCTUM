@@ -61,7 +61,7 @@ async function handleUpdateStamina({ userID, data }) {
 	let query = "UPDATE users SET stamina = stamina + 1 WHERE stamina < maxStamina;";
 	dbConnection.query(query, (err, result) => {
 		if (err) throw err;
-		console.log("updated stamina for all users");
+//		console.log("updated stamina for all users");
 	});
 };
 
@@ -257,6 +257,24 @@ async function handleLevelUp({ data }, fn) {
 			return fn("none", result[0].level, result[0].upgradePoints);
 		}
 
+		//handle the level cap
+		if (newLevel >= process.env.RANK_3_THRESHOLD) {
+			//update the level, add lootbox
+			//TODO: add lootbox item
+			let query = `UPDATE users SET level = ${newLevel} WHERE userID='${data[0]}' LIMIT 1;`;
+			return dbConnection.query(query, (err, result) => {
+				if (err) throw err;
+
+				//finally, pass the level and upgrade points to the client
+				let query = `SELECT level, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+				return dbConnection.query(query, (err, result) => {
+					if (err) throw err;
+					dbLog(data[0], "level max", `level: ${result[0].level}, upgrade points: ${result[0].upgradePoints}, lootboxes: ???`);
+					return fn("levelUp", result[0].level, result[0].upgradePoints);
+				});
+			});
+		}
+
 		//update the level and the upgrade points
 		let query = `UPDATE users SET level = ${newLevel}, upgradePoints = upgradePoints + ${newLevel - result[0].level} WHERE userID='${data[0]}' LIMIT 1;`;
 		return dbConnection.query(query, (err, result) => {
@@ -310,12 +328,12 @@ function calculateTimeAgo(seconds) {
 	}
 
 	if (seconds < 60 * 60) {
-		return "just this hour";
+		return "this hour";
 	}
 
 	if (seconds < 60 * 60 * 24) {
-		return "just today";
+		return "today";
 	}
 
-	return "just recently";
+	return "recently";
 }

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 	faction bigint,
 	factionChanged DATETIME NULL,
 
-	level int NOT NULL DEFAULT 1,
+	level int NOT NULL DEFAULT 0,
 	experience int NOT NULL DEFAULT 0,
 
 	maxHealth int NOT NULL DEFAULT 100,

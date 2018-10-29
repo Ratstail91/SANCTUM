@@ -64,7 +64,7 @@ exports.ProcessFactionChangeAttempt = function(client, message, factionRole, dia
 	shared.ChangeFaction(client, factionRole, message.channel, message.member, handleResponse);
 }
 
-//ProcessStatsCommand
+//ProcessCheckinCommand
 //client - discord.js client
 //member - discord.js member
 //channel - discord.js channel
@@ -82,7 +82,7 @@ exports.ProcessCheckinCommand = function(client, member, channel, dialog) {
 	dataRequest.OnServerData("checkin", handleResponse, member.user.id); //ID of the person who checked in TODO: username too
 }
 
-//ProcessStatsCommand
+//ProcessGiveCommand
 //client - discord.js client
 //message - discord.js message
 //args - arguments to the give command
@@ -144,9 +144,11 @@ exports.ProcessGiveCommand = function(client, message, args, dialog) {
 //channel - discord.js channel
 //dialog - dialog function
 exports.ProcessStatsCommand = function(client, member, channel, dialog) {
-	exports.HandleLevelUp(client, member, channel, dialog);
-	exports.GetStats(member.user, (stats) => {
-		exports.PrintStats(client, member, channel, stats);
+	exports.HandleLevelUp(client, member, channel, dialog, () => {
+		//BUGFIX: this code is in a next function to resolve the stats display bug
+		exports.GetStats(member.user, (stats) => {
+			exports.PrintStats(client, member, channel, stats);
+		});
 	});
 }
 
@@ -208,7 +210,7 @@ exports.PrintStats = function(client, member, channel, stats) {
 //member - discord.js member
 //channel - discord.js channel
 //dialog - dialog function
-exports.HandleLevelUp = function(client, member, channel, dialog) {
+exports.HandleLevelUp = function(client, member, channel, dialog, next) {
 	//handle member strings
 	if (typeof(member) === "string") { //TODO: fold these into their own functions EVERYWHERE.
 		//get the member
@@ -226,11 +228,13 @@ exports.HandleLevelUp = function(client, member, channel, dialog) {
 		//handle levelling up
 		if (response === "levelUp" || response === "RankUp") {
 			if (level >= process.env.RANK_3_THRESHOLD) {
-				shared.SendPublicMessage(client, member.user, channel, dialog("levelUpCap", dialog("levelUpCapRemark"), level));
+				shared.SendPublicMessage(client, member.user, channel, dialog("levelUpCap", dialog("levelUpCapRemark"), process.env.RANK_3_THRESHOLD));
 			} else {
 				shared.SendPublicMessage(client, member.user, channel, dialog("LevelUp", dialog("levelUpRemark"), level, upgradePoints));
 			}
 		}
+
+		if (next) next(); //BUGFIX
 	}
 
 	shared.LevelUp(client, member, handleResponse);
