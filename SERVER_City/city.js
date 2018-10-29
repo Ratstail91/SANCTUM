@@ -45,7 +45,7 @@ io.on("connection", async (socket) => {
 	socket.on("updateStamina", handleUpdateStamina);
 	socket.on("conversion", handleConversion);
 	socket.on("checkin", handleCheckin);
-	socket.on("wallet", handleWallet);
+	socket.on("wallet", handleWallet); //TODO: server ping from ADAM
 	socket.on("transfer", handleTransfer);
 	socket.on("userStats", handleUserStats);
 	socket.on("addXP", handleAddXP);
@@ -83,14 +83,13 @@ async function handleConversion({ data }, fn) {
 			let query = `INSERT INTO users (userID, faction, factionChanged) VALUES (${data[0]}, ${data[1]}, NOW());`;
 			return dbConnection.query(query, (err, result) => {
 				if (err) throw err;
-				console.log("new user");
+				dbLog(data[0], "new user", `joined faction ${data[1]}`);
 				return fn("newUser");
 			});
 		}
 
 		//check if already joined this faction
 		if (result[0].faction == data[1]) { //faction == factionRole
-			console.log("alreadyJoined");
 			return fn("alreadyJoined");
 		}
 
@@ -99,16 +98,14 @@ async function handleConversion({ data }, fn) {
 
 		return dbConnection.query(query, (err, result) => {
 			if (err) throw err;
-			console.log(result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), factionChanged))']);
 			if(result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), factionChanged))'] < 60 * 60 * 24 * 7) { //7 days
-				console.log("conversionLocked");
 				return fn("conversionLocked"); //too soon
 			} else {
 				//update the database with the join
 				query = `UPDATE users SET faction = ${data[1]}, factionChanged = NOW() WHERE userID='${data[0]}';`;
 				return dbConnection.query(query, (err, result) => {
 					if (err) throw err;
-					console.log("joined"); //TODO: convert these to database logs
+					dbLog(data[0], "joined", `joined faction ${data[1]}`);
 					return fn("joined");
 				});
 			}
@@ -119,7 +116,6 @@ async function handleConversion({ data }, fn) {
 //handle checkin, and add 1 XP
 async function handleCheckin({ data }, fn) {
 	//handle checkins (grant crystal bonus)
-	//TODO: handle XP (grant 1 XP)
 
 	//arguments to fn: ["available", time since last checkin], randomAmount
 
@@ -129,16 +125,17 @@ async function handleCheckin({ data }, fn) {
 
 	return dbConnection.query(query, (err, result) => {
 		if (err) throw err;
-		console.log(result);
 
 		if (result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))'] == null || result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))'] > 60 * 60 * 22) { //22 hours
 			let query = `UPDATE users SET lastCheckin = NOW(), wallet = wallet + ${randomAmount} WHERE userID='${data[0]}' LIMIT 1;`;
 			return dbConnection.query(query, (err, result) => {
 				if (err) throw err;
+				dbLog(data[0], "checkin", `gained ${randomAmount} to wallet`);
+				addExperience(data[0], 1); //Add 1 XP on every checkin
 				return fn("available", randomAmount);
 			});
 		} else {
-			return fn(result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))']); //TODO: Time ago function
+			return fn(calculateTimeAgo(result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))']));
 		}
 	});
 }
@@ -150,6 +147,7 @@ async function handleWallet({ data }, fn) {
 	let query = `SELECT wallet FROM users WHERE userID='${data[0]}' LIMIT 1;`;
 	dbConnection.query(query, (err, result) => {
 		if (err) throw err;
+		dbLog(data[0], "wallet query", `result: ${result[0].wallet}`);
 		fn(result[0].wallet);
 	});
 }
@@ -192,8 +190,8 @@ async function handleTransfer({ data }, fn) {
 				return dbConnection.query(query, (err, result) => {
 					if (err) throw err;
 
-					//TODO: log here
 					//finally
+					dbLog(data[0], "wallet transfer", `${data[2]} to ${data[1]}`);
 					return fn("success");
 				});
 			});
@@ -226,7 +224,6 @@ async function handleUserStats({ data }, fn) {
 			wallet: result[0].wallet
 		};
 
-		//TODO: log this
 		return fn(stats);
 	});
 }
@@ -236,17 +233,44 @@ async function handleAddXP({ userID, data }) {
 	console.log("received an addXP request...");
 	//data[0] = amount
 
-	//TODO: add an amount of XP to a user account
+	addExperience(userID, data[0]);
 }
 
 //handle levelling up
 async function handleLevelUp({ data }, fn) {
+	//NOTE: levelling up is handled manually because of reasons
 	console.log("received a levelUp request...");
 	//data[0] = user ID
 
-	if (fn) {
-		fn("none", 0, 0); //["none", "levelUp"], level, statPoints
-	}
+	//parameters to fn: ["none", "levelUp"], level, upgradePoints
+
+	//get the current level and total amount of experience
+	let query = `SELECT level, experience, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+
+		//calculate the correct level, and compare it with the result
+		let newLevel = Math.floor(calculateLevel(result[0].experience));
+
+		//if no levelling, return
+		if (newLevel == result[0].level) {
+			return fn("none", result[0].level, result[0].upgradePoints);
+		}
+
+		//update the level and the upgrade points
+		let query = `UPDATE users SET level = ${newLevel}, upgradePoints = upgradePoints + ${newLevel - result[0].level} WHERE userID='${data[0]}' LIMIT 1;`;
+		return dbConnection.query(query, (err, result) => {
+			if (err) throw err;
+
+			//finally, pass the level and upgrade points to the client
+			let query = `SELECT level, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+			return dbConnection.query(query, (err, result) => {
+				if (err) throw err;
+				dbLog(data[0], "level up", `level: ${result[0]}, upgrade points: ${result[0].upgradePoints}`);
+				return fn("levelUp", result[0].level, result[0].upgradePoints);
+			});
+		});
+	});
 }
 
 //utility functions
@@ -262,4 +286,36 @@ function calculateLevelProgress(experience) {
 	let decimal = level - base;
 
 	return Math.floor(decimal * 100); //percentage
+}
+
+function addExperience(userID, amount) {
+	//Add an amount of XP to a user account
+	let query = `UPDATE users SET experience = experience + ${amount} WHERE userID='${userID}' LIMIT 1;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+		dbLog(userID, "xp up", `amount added: ${amount}`);
+	});
+}
+
+function dbLog(id, type, data) {
+	let query = `INSERT INTO log (discordID, type, data) VALUES ('${id}', '${type}', '${data}')`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+	});
+}
+
+function calculateTimeAgo(seconds) {
+	if (seconds < 60) {
+		return "just now";
+	}
+
+	if (seconds < 60 * 60) {
+		return "just this hour";
+	}
+
+	if (seconds < 60 * 60 * 24) {
+		return "just today";
+	}
+
+	return "just recently";
 }

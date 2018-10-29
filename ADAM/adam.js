@@ -141,12 +141,11 @@ function processBasicCommands(client, message) {
 
 		case "wallet": //DEBUGGING
 			shared.OnServerData("wallet", (amount) => {
-				shared.SendPublicMessage(client, message.channel, "Wallet: " + amount);
+				shared.SendPublicMessage(client, message.author, message.channel, "Wallet: " + amount);
 			}, message.author.id);
 			return true;
 
 		//ADAM and the faction leaders print the intros in the gate
-		//TODO: prune the unneeded intros from each bot
 		case "intro":
 			if (shared.IsAdmin(client, message.author) && message.channel.id == process.env.GATE_CHANNEL_ID) {
 				shared.SendPublicMessage(client, client.channels.get(process.env.GATE_CHANNEL_ID), dialog("intro"));
@@ -159,6 +158,11 @@ function processBasicCommands(client, message) {
 				shared.SendPublicMessage(client, client.channels.get(process.env.GATE_CHANNEL_ID), dialog("introEnd"));
 				message.delete(1000);
 			}
+			return true;
+
+		case "debugxp":
+			shared.SendServerData("addXP", message.author.id, args[0]);
+			shared.SendPublicMessage(client, message.author, message.channel, "debug XP added");
 			return true;
 	}
 
