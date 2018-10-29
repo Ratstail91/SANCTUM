@@ -172,7 +172,7 @@ async function handleTransfer({ data }, fn) {
 		}
 
 		//check the recipient is real
-		let query = `SELECT * FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+		let query = `SELECT * FROM users WHERE userID='${data[1]}' LIMIT 1;`;
 		return dbConnection.query(query, (err, result) => {
 			if (err) throw err;
 
@@ -266,7 +266,7 @@ async function handleLevelUp({ data }, fn) {
 			let query = `SELECT level, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
 			return dbConnection.query(query, (err, result) => {
 				if (err) throw err;
-				dbLog(data[0], "level up", `level: ${result[0]}, upgrade points: ${result[0].upgradePoints}`);
+				dbLog(data[0], "level up", `level: ${result[0].level}, upgrade points: ${result[0].upgradePoints}`);
 				return fn("levelUp", result[0].level, result[0].upgradePoints);
 			});
 		});
