@@ -56,6 +56,12 @@ exports.RankUp = async function(client, member, level) {
 		member = guild.members.get(user.id);
 	}
 
+	//BUGFIX: level 0 and lower can't have a rank
+	if (level < process.env.RANK_1_THRESHOLD) {
+		removeRankRoles(guild, member);
+		return "";
+	}
+
 	//Snapping the level variable
 	if (level < process.env.RANK_2_THRESHOLD) {
 		level = process.env.RANK_1_THRESHOLD;
@@ -78,21 +84,26 @@ exports.RankUp = async function(client, member, level) {
 		return "";
 	}
 
-	//the ranks as roles
-	let ranks = [
-		guild.roles.find(role => role.name === process.env.RANK_1),
-		guild.roles.find(role => role.name === process.env.RANK_2),
-		guild.roles.find(role => role.name === process.env.RANK_3)
-	]
-
-	//remove all existing roles
-	for(let i = 0; i < ranks.length; i++) {
-		member.removeRole(ranks[i].id);
-	}
+	//remove all ranks
+	removeRankRoles(guild, member);
 
 	//this will enable the new rooms
 	member.addRole(levelRole);
 
 	//return the result
 	return "rankUp";
+}
+
+function removeRankRoles(guild, member) {
+	//the ranks as roles
+	let ranks = [
+		guild.roles.find(role => role.name === process.env.RANK_1),
+		guild.roles.find(role => role.name === process.env.RANK_2),
+		guild.roles.find(role => role.name === process.env.RANK_3)
+	];
+
+	//remove all existing roles
+	for(let i = 0; i < ranks.length; i++) {
+		member.removeRole(ranks[i].id);
+	}
 }
