@@ -40,11 +40,13 @@ exports.SendPublicMessage = function(client, user, channel, message, typingDelay
 	if (typingDelay !== 0) {
 		channel.startTyping();
 		setTimeout(() => {
-			channel.send(message);
+			channel.send(message)
+				.catch(console.error);
 			channel.stopTyping(true);
 		}, typingDelay);
 	} else {
-		channel.send(message);
+		channel.send(message)
+			.catch(console.error);
 	}
 }
 
@@ -58,5 +60,6 @@ exports.SendPrivateMessage = function(client, user, message) {
 		user = client.users.find(item => item.username === user || item.id === user);
 	}
 
-	user.send(message);
+	user.send(message)
+		.catch(console.error);
 }
