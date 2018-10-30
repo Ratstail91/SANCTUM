@@ -139,7 +139,7 @@ function processBasicCommands(client, message) {
 			}
 			return true;
 
-		case "wallet": //DEBUGGING
+		case "wallet": //DEBUGGING TODO: add a ping command for the server
 			shared.OnServerData("wallet", (amount) => {
 				shared.SendPublicMessage(client, message.author, message.channel, "Wallet: " + amount);
 			}, message.author.id);
