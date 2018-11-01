@@ -25,7 +25,18 @@ dialog = function(baseDialog) {
 }(dialog);
 
 //global settings
-let itemCount = 3;
+const itemCount = 3;
+const treatments = [
+	// Name | Crystals | HP | Revive | Description
+	["Patch", 		10,	"50",	false,	"Heals 50HP immediately. Must have more than 0HP."],
+	["PatchV2",		15,	"50%",	false,	"Heals to 50% HP immediately. Must have more than 0HP."],
+	["Regen",		20,	"100",	false,	"Heals 100HP immediately. Must have more than 0HP."],
+	["RegenV2",		25,	"100%",	false,	"Heals all HP to maximum immediately. Must have more than 0HP."],
+	["Revive",		20,	"25",	true,	"Brings a traveler back from a KO (0HP) to 25HP immediately."],
+	["ReviveV2",	25,	"50%",	true,	"Brings a traveler back from a KO (0HP) to 50% HP immediately."],
+	["ReviveV3",	30,	"100%",	true,	"Brings a traveler back from a KO (0HP) to 100% HP immediately."]
+];
+let availableTreatments = [];
 
 //handle errors
 client.on('error', console.error);
@@ -114,8 +125,12 @@ function processBasicCommands(client, message) {
 			}
 			return true;
 
-		case "heal": //TODO: wrap this in a function
-			//TODO: write this
+		case "heal":
+			if (!args[0]) {
+				printTreatments(message.author, message.channel);
+			} else {
+				processHealCommand(message.author, message.channel, args);
+			}
 			return true;
 
 		default:
@@ -128,5 +143,62 @@ function processBasicCommands(client, message) {
 
 //only certain items will be available each day
 function resetInventory(itemCount) {
-	//TODO
+	console.log("resetting inventory...");
+
+	//generate random numbers to select treatments to use
+	let randomNumbers = [];
+	do {
+		let num = shared.Random(0, treatments.length - 1); //there's probably a more efficient way to do this
+		if (!randomNumbers.includes(num)) {
+			randomNumbers.push(num);
+		}
+	} while (randomNumbers.length < itemCount);
+	randomNumbers.sort((a, b) => a - b);
+
+	//actually select the randomized treatments
+	availableTreatments = [];
+	for (let i = 0; i < randomNumbers.length; i++) {
+		availableTreatments.push( treatments[randomNumbers[i]] );
+
+		//shuffle the cost a little
+		if (shared.Random(0, 1) === 1) {
+			availableTreatments[i][1] += Math.floor( parseFloat(availableTreatments[i][1]) / 6);
+		} else {
+			availableTreatments[i][1] -= Math.floor( parseFloat(availableTreatments[i][1]) / 6);
+		}
+	}
+}
+
+function printTreatments(user, channel) {
+	let handleResponse = function(stats) {
+		//build the treatment message
+		let treatmentMessage = "";
+		for (let i = 0; i < availableTreatments.length; i++) {
+			treatmentMessage += `${availableTreatments[i][0]} - :crystals: **${availableTreatments[i][1]}**\n` + "```" + availableTreatments[i][4] + "```\n";
+		}
+
+		//create the embed
+		let embed = new discord.RichEmbed()
+			.setAuthor(client.user.username, client.user.avatarURL)
+			.setColor(client.guilds.get(process.env.SANCTUM_ID).roles.find(role => role.name === "NPC").color) //NOTE: probably a better way to do this
+			.setTitle("Biotech Healing")
+			.setDescription(treatmentMessage)
+			.setFooter(`${user.username}, you have ${stats.wallet} crystals. Use !heal [OPTION] to buy.`);
+
+		shared.SendPublicMessage(client, user, channel, dialog("heal"));
+		channel.send({ embed });
+	}
+
+	shared.OnServerData("userStats", handleResponse, user.id);
+}
+
+function processHealCommand(user, channel, args) {
+	//get the selected treatment
+	let selectedTreatment = availableTreatments.filter((treatment) => treatment[0].toLowerCase() === args[0].toLowerCase())[0];
+
+	if (selectedTreatment[3]) { //should it be a revive command?
+		shared.OnServerData("revive", handleResponse, user.id, selectedTreatment[1], selectedTreatment[2]);
+	} else {
+		shared.OnServerData("heal", handleResponse, user.id, selectedTreatment[1], selectedTreatment[2]);
+	}
 }

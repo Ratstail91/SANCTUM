@@ -50,6 +50,9 @@ io.on("connection", async (socket) => {
 	socket.on("userStats", handleUserStats);
 	socket.on("addXP", handleAddXP);
 	socket.on("levelUp", handleLevelUp);
+	socket.on("reviveAll", handleReviveAll);
+	socket.on("revive", handleRevive);
+	socket.on("heal", handleHeal);
 });
 
 //listen
@@ -289,6 +292,40 @@ async function handleLevelUp({ data }, fn) {
 			});
 		});
 	});
+}
+
+//handle the daily revives
+async function handleReviveAll({ data }, fn) {
+	console.log("received a reviveAll request...");
+
+	//parameters to fn: none
+
+	let query = `UPDATE users SET health = maxHealth;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+
+		return fn();
+	});
+}
+
+//handle reviving a specific player
+async function handleRevive({ data }, fn) {
+	console.log("received a revive request...");
+	//data[0] = user ID
+	//data[1] = cost
+	//data[2] = amount (potentially percentage)
+
+	//TODO
+}
+
+//handle healing a specific player
+async function handleHeal({ data }, fn) {
+	console.log("received a heal request...");
+	//data[0] = user ID
+	//data[1] = cost
+	//data[2] = amount (potentially percentage)
+
+	//TODO
 }
 
 //utility functions

@@ -20,7 +20,7 @@ exports.ConnectToServer = function(username, address, port, pass) { //NOTE: this
 	io.on("connect", () => io.emit("authentication", {SERVER_PASS_KEY: pass, username: username}) );
 	io.on("authenticated", () => console.log("Authenticated with server: " + `${address}:${port}`));
 	io.on("disconnect", () => console.log("disconnected from server: " + `${address}:${port}`));
-	io.on("error", (err) => { throw err; } );
+//	io.on("error", (err) => { throw err; } );
 
 	initialized = true;
 }
