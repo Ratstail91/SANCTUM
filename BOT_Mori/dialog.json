@@ -1,0 +1,29 @@
+{
+	"reviveAll": [
+		"Ahhh. Just finished reviving all of our fellow travelers.",
+		"Rezing travelers is hard work. {1} How was your night?",
+		"Finished up bringing everybody back from the dead. I swear I'm a magician sometimes.",
+		"Another day. More lives saved. No thanks from anybody. Good times.",
+		"Hello everybody. I see you're alive and well. Because of me, but no biggie.",
+		"Bringing everybody back every day is grueling, thankless work.",
+		"I need a vacation. Just brought everybody back and they immediatly go fight ravagers.",
+		"Everybody should be up. Please don't run straight to the deadlands.",
+		"Everybody is alive. Thanks to me. But hey, no need to thank me or anything. I'll just drink in silence.",
+		"Good day. All the travelers are back up. Time for some sleep. Goodnight everybody."
+	],
+
+	"heal": "Here's what I've got at the moment. My prices are based on availability, it's hard to find stuff these days.",
+
+	"healSuccess": "I've applied a {1} via nanotech .\n**-{2}**:crystals: | **{3}**HP.",
+	"healFailure": "Sorry, not sure I understand what procedure you'd like to purchase.",
+	"healLocked": "Sorry, you don't meet the requirements for this procedure.",
+	"healNotEnoughInWallet": "Sorry, looks like you don't have the funds for that.",
+	"healKnockedOut": "You're currently knoecked out (0HP). You require a revive procdure to heal immediately, or you can wait until 7 AM when I revive everyone.",
+	"healFullHealth": "Looks like you're already full health. Why would you want to heal?",
+
+	"noResult": [
+		"Try again, genius.",
+		"Wrong command. Try again.",
+		"Wow, how are you so terrible at using commands?"
+	]
+}

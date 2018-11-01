@@ -1,0 +1,20 @@
+{
+  "name": "Librarian",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "forever -o forever.log -e error.log start mori.js",
+    "restart": "forever -o forever.log -e error.log restart mori.js",
+    "stop": "forever stop mori.js",
+    "node": "node mori.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.4.2",
+    "dotenv": "^6.1.0",
+    "forever": "^0.15.3",
+    "node-cron": "^1.2.1"
+  }
+}

@@ -9,6 +9,7 @@ exports = module.exports = {};
 //typingDelay (optional) - delay in milliseconds for the message, while typing is shown
 exports.SendPublicMessage = function(client, user, channel, message, typingDelay = 0) {
 	//Handle optional second argument (so much for default arugments in node)
+	//WARNING: this may be funky as fuck due to typingDelay; if so, delete this
 	if (message === undefined) {
 		message = channel;
 		channel = user;

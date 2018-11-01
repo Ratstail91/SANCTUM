@@ -68,6 +68,7 @@ KAMALA_OBSIDIAN_TOKEN=""
 MONTGOMERY_GENESIS_TOKEN=""
 DAIRO_HAND_TOKEN=""
 LIBRARIAN_TOKEN=""
+MORI_TOKEN=""
 
 # Channel access roles (must match roles in your server)
 # Replace them with your own on a sandbox server!
