@@ -105,6 +105,7 @@ function processBasicCommands(client, message) {
 
 		case "help":
 		case "lore":
+		case "book":
 			shared.SendPublicMessage(client, message.author, message.channel, dialog(command, args[0]));
 			return true;
 
