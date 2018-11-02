@@ -76,17 +76,17 @@ async function handleConversion({ data }, fn) {
 	//possible arguments to fn: ["joined", "alreadyJoined", "conversionLocked", "newUser"]
 
 	//find the last time this user converted
-	let query = `SELECT faction FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+	let query = "SELECT faction FROM users WHERE userID = ? LIMIT 1;";
 
-	return dbConnection.query(query, (err, result) => {
+	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
 		//check if this is a new user
 		if (result.length === 0) {
-			let query = `INSERT INTO users (userID, faction, factionChanged) VALUES (${data[0]}, ${data[1]}, NOW());`;
-			return dbConnection.query(query, (err, result) => {
+			let query = "INSERT INTO users (userID, faction, factionChanged) VALUES (?, ?, NOW());";
+			return dbConnection.query(query, [data[0], data[1]], (err, result) => {
 				if (err) throw err;
-				dbLog(data[0], "new user", `joined faction ${data[1]}`);
+				dbLog(data[0], "new user", "joined faction " + data[1]);
 				return fn("newUser");
 			});
 		}
@@ -97,18 +97,17 @@ async function handleConversion({ data }, fn) {
 		}
 
 		//check if enough time has passed to join a new faction
-		let query = `SELECT TIME_TO_SEC(TIMEDIFF(NOW(), factionChanged)) FROM users WHERE userID='${data[0]}' LIMIT 1;`;
-
-		return dbConnection.query(query, (err, result) => {
+		let query = "SELECT TIME_TO_SEC(TIMEDIFF(NOW(), factionChanged)) FROM users WHERE userID = ? LIMIT 1;";
+		return dbConnection.query(query, [data[0]], (err, result) => {
 			if (err) throw err;
 			if(result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), factionChanged))'] < 60 * 60 * 24 * 7) { //7 days
 				return fn("conversionLocked"); //too soon
 			} else {
 				//update the database with the join
-				query = `UPDATE users SET faction = ${data[1]}, factionChanged = NOW() WHERE userID='${data[0]}';`;
-				return dbConnection.query(query, (err, result) => {
+				query = "UPDATE users SET faction = ?, factionChanged = NOW() WHERE userID = ?;";
+				return dbConnection.query(query, [data[1], data[0]], (err, result) => {
 					if (err) throw err;
-					dbLog(data[0], "joined", `joined faction ${data[1]}`);
+					dbLog(data[0], "joined", "joined faction " + data[1]);
 					return fn("joined");
 				});
 			}
@@ -124,21 +123,21 @@ async function handleCheckin({ data }, fn) {
 
 	let randomAmount = calcRandom.Random(4, 9);
 
-	let query = `SELECT TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin)) FROM users WHERE userID='${data[0]}' LIMIT 1;`;
+	let query = "SELECT TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin)) FROM users WHERE userID = ? LIMIT 1;";
 
-	return dbConnection.query(query, (err, result) => {
+	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
-		if (result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))'] == null || result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))'] > 60 * 60 * 22) { //22 hours
-			let query = `UPDATE users SET lastCheckin = NOW(), wallet = wallet + ${randomAmount} WHERE userID='${data[0]}' LIMIT 1;`;
-			return dbConnection.query(query, (err, result) => {
+		if (result[0]["TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))"] == null || result[0]["TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))"] > 60 * 60 * 22) { //22 hours
+			let query = "UPDATE users SET lastCheckin = NOW(), wallet = wallet + ? WHERE userID = ? LIMIT 1;";
+			return dbConnection.query(query, [randomAmount, data[0]], (err, result) => {
 				if (err) throw err;
-				dbLog(data[0], "checkin", `gained ${randomAmount} to wallet`);
+				dbLog(data[0], "checkin", "gained " + randomAmount + " to wallet");
 				addExperience(data[0], 1); //Add 1 XP on every checkin
 				return fn("available", randomAmount);
 			});
 		} else {
-			return fn(calculateTimeAgo(result[0]['TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))']));
+			return fn(calculateTimeAgo(result[0]["TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin))"]));
 		}
 	});
 }
@@ -147,10 +146,10 @@ async function handleCheckin({ data }, fn) {
 async function handleWallet({ data }, fn) {
 	//data[0] = ID of the person to check
 
-	let query = `SELECT wallet FROM users WHERE userID='${data[0]}' LIMIT 1;`;
-	dbConnection.query(query, (err, result) => {
+	let query = "SELECT wallet FROM users WHERE userID = ? LIMIT 1;";
+	dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
-		dbLog(data[0], "wallet query", `result: ${result[0].wallet}`);
+		dbLog(data[0], "wallet query", "result: " + result[0].wallet);
 		fn(result[0].wallet);
 	});
 }
@@ -165,18 +164,18 @@ async function handleTransfer({ data }, fn) {
 	//parameters to fn: ["success", "failure"]
 
 	//check there's enough in the sender's wallet
-	let query = `SELECT wallet - ${data[2]} FROM users WHERE userID='${data[0]}' LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "SELECT wallet - ? FROM users WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [data[2], data[0]], (err, result) => {
 		if (err) throw err;
 
 		//too little in there
-		if (result[0][`wallet - ${data[2]}`] < 0) {
+		if (result[0]["wallet - ?"] < 0) {
 			return fn("failure");
 		}
 
 		//check the recipient is real
-		let query = `SELECT * FROM users WHERE userID='${data[1]}' LIMIT 1;`;
-		return dbConnection.query(query, (err, result) => {
+		let query = "SELECT * FROM users WHERE userID = ? LIMIT 1;";
+		return dbConnection.query(query, [data[0]], (err, result) => {
 			if (err) throw err;
 
 			if (result.length == 0) {
@@ -184,17 +183,17 @@ async function handleTransfer({ data }, fn) {
 			}
 
 			//subtract from the sender
-			let query = `UPDATE users SET wallet = wallet - ${data[2]} WHERE userID='${data[0]}' LIMIT 1;`;
-			return dbConnection.query(query, (err, result) => {
+			let query = "UPDATE users SET wallet = wallet - ? WHERE userID = ? LIMIT 1;";
+			return dbConnection.query(query, [data[2], data[0]], (err, result) => {
 				if (err) throw err;
 
 				//add to the recipient
-				let query = `UPDATE users SET wallet = wallet + ${data[2]} WHERE userID='${data[1]}' LIMIT 1;`;
-				return dbConnection.query(query, (err, result) => {
+				let query = "UPDATE users SET wallet = wallet + ? WHERE userID= ? LIMIT 1;";
+				return dbConnection.query(query, [data[2], data[1]], (err, result) => {
 					if (err) throw err;
 
 					//finally
-					dbLog(data[0], "wallet transfer", `${data[2]} to ${data[1]}`);
+					dbLog(data[0], "wallet transfer", data[2] + " to " + data[1]);
 					return fn("success");
 				});
 			});
@@ -209,8 +208,8 @@ async function handleUserStats({ data }, fn) {
 
 	//parameters to fn: stat structure
 
-	let query = `SELECT level, experience, maxHealth, health, maxStamina, stamina, strength, speed, upgradePoints, wallet FROM users WHERE userID='${data[0]}' LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "SELECT level, experience, maxHealth, health, maxStamina, stamina, strength, speed, upgradePoints, wallet FROM users WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
 		let stats = {
@@ -248,8 +247,8 @@ async function handleLevelUp({ data }, fn) {
 	//parameters to fn: ["none", "levelUp"], level, upgradePoints
 
 	//get the current level and total amount of experience
-	let query = `SELECT level, experience, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "SELECT level, experience, upgradePoints FROM users WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
 		//calculate the correct level, and compare it with the result
@@ -264,15 +263,15 @@ async function handleLevelUp({ data }, fn) {
 		if (newLevel >= process.env.RANK_3_THRESHOLD) {
 			//update the level, add lootbox
 			//TODO: add lootbox item
-			let query = `UPDATE users SET level = ${newLevel} WHERE userID='${data[0]}' LIMIT 1;`;
-			return dbConnection.query(query, (err, result) => {
+			let query = "UPDATE users SET level = ? WHERE userID = ? LIMIT 1;";
+			return dbConnection.query(query, [newLevel, data[0]], (err, result) => {
 				if (err) throw err;
 
 				//finally, pass the level and upgrade points to the client
-				let query = `SELECT level, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
-				return dbConnection.query(query, (err, result) => {
+				let query = "SELECT level, upgradePoints FROM users WHERE userID = ? LIMIT 1;";
+				return dbConnection.query(query, [data[0]], (err, result) => {
 					if (err) throw err;
-					dbLog(data[0], "level max", `level: ${result[0].level}, upgrade points: ${result[0].upgradePoints}, lootboxes: ???`);
+					dbLog(data[0], "level max", "level: " + result[0].level + ", upgrade points: " + result[0].upgradePoints + ", lootboxes: ???");
 					return fn("levelUp", result[0].level, result[0].upgradePoints);
 				});
 			});
@@ -287,7 +286,7 @@ async function handleLevelUp({ data }, fn) {
 			let query = `SELECT level, upgradePoints FROM users WHERE userID='${data[0]}' LIMIT 1;`;
 			return dbConnection.query(query, (err, result) => {
 				if (err) throw err;
-				dbLog(data[0], "level up", `level: ${result[0].level}, upgrade points: ${result[0].upgradePoints}`);
+				dbLog(data[0], "level up", "level: " + result[0].level + ", upgrade points: " + result[0].upgradePoints);
 				return fn("levelUp", result[0].level, result[0].upgradePoints);
 			});
 		});
@@ -300,7 +299,7 @@ async function handleReviveAll({ data }, fn) {
 
 	//parameters to fn: none
 
-	let query = `UPDATE users SET health = maxHealth;`;
+	let query = "UPDATE users SET health = maxHealth;";
 	return dbConnection.query(query, (err, result) => {
 		if (err) throw err;
 
@@ -316,8 +315,8 @@ async function handleRevive({ data }, fn) {
 	//data[2] = amount (potentially percentage)
 
 	//WARNING: copy/paste
-	let query = `SELECT health, maxHealth, wallet FROM users WHERE userID=${data[0]} LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "SELECT health, maxHealth, wallet FROM users WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
 		//not knocked out
@@ -336,8 +335,8 @@ async function handleHeal({ data }, fn) {
 	//data[1] = cost
 	//data[2] = amount (potentially percentage)
 
-	let query = `SELECT health, maxHealth, wallet FROM users WHERE userID=${data[0]} LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "SELECT health, maxHealth, wallet FROM users WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
 		//not knocked out
@@ -350,7 +349,7 @@ async function handleHeal({ data }, fn) {
 }
 
 //avoid copy/paste in the healing functions
-function innerHeal(data, fn, result, logType = 'unknown') {
+function innerHeal(data, fn, result, logType = "unknown") {
 	//not enough money
 	if (result[0].wallet < data[1]) {
 		return fn("healNotEnoughInWallet");
@@ -372,13 +371,14 @@ function innerHeal(data, fn, result, logType = 'unknown') {
 
 	//actually do the regen
 	let newHealth = Math.min(result[0].health + regenAmount, result[0].maxHealth); //I tried making this an SQL function, didn't work
-	let query = `UPDATE users SET health = ${newHealth}, wallet = wallet - ${data[1]} WHERE userID='${data[0]}' LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "UPDATE users SET health = ?, wallet = wallet - ? WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [newHealth, data[1], data[0]], (err, result) => {
 		if (err) throw err;
 
 		//logging touch
-		dbConnection.query(`SELECT health, maxHealth FROM users WHERE userID='${data[0]}' LIMIT 1;`, (err, result) => {
-			dbLog(data[0], `health ${logType}`, `healed ${regenAmount} - ${result[0].health}/${result[0].maxHealth}`);
+		let query = "SELECT health, maxHealth FROM users WHERE userID = ? LIMIT 1;";
+		dbConnection.query(query, [data[0]], (err, result) => {
+			dbLog(data[0], "health " + logType, "healed " + regenAmount + " - " + result[0].health + "/" + result[0].maxHealth);
 		});
 
 		return fn("healSuccess");
@@ -402,16 +402,16 @@ function calculateLevelProgress(experience) {
 
 function addExperience(userID, amount) {
 	//Add an amount of XP to a user account
-	let query = `UPDATE users SET experience = experience + ${amount} WHERE userID='${userID}' LIMIT 1;`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "UPDATE users SET experience = experience + ? WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [amount, userID], (err, result) => {
 		if (err) throw err;
-		dbLog(userID, "xp up", `amount added: ${amount}`);
+		dbLog(userID, "xp up", "amount added: " + amount);
 	});
 }
 
 function dbLog(id, type, data) {
-	let query = `INSERT INTO log (discordID, type, data) VALUES ('${id}', '${type}', '${data}')`;
-	return dbConnection.query(query, (err, result) => {
+	let query = "INSERT INTO log (discordID, type, data) VALUES (?, ?, ?)";
+	return dbConnection.query(query, [id, type, data], (err, result) => {
 		if (err) throw err;
 	});
 }
