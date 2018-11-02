@@ -12,14 +12,14 @@
 		"Good day. All the travelers are back up. Time for some sleep. Goodnight everybody."
 	],
 
-	"heal": "Here's what I've got at the moment. My prices are based on availability, it's hard to find stuff these days.",
+	"healHeading": "Here's what I've got at the moment. My prices are based on availability, it's hard to find stuff these days.",
 
 	"healSuccess": "I've applied a {1} via nanotech .\n**-{2}**:crystals: | **{3}**HP.",
 	"healFailure": "Sorry, not sure I understand what procedure you'd like to purchase.",
-	"healLocked": "Sorry, you don't meet the requirements for this procedure.",
 	"healNotEnoughInWallet": "Sorry, looks like you don't have the funds for that.",
-	"healKnockedOut": "You're currently knoecked out (0HP). You require a revive procdure to heal immediately, or you can wait until 7 AM when I revive everyone.",
-	"healFullHealth": "Looks like you're already full health. Why would you want to heal?",
+	"healNotKnockedOut": "Sorry, you don't meet the requirements for this procedure.",
+	"healKnockedOut": "You're currently knocked out (0HP). You require a revive procdure to heal immediately, or you can wait until 7 AM when I revive everyone.",
+	"healFullHealth": "Looks like you're already at full health. Why would you want to heal?",
 
 	"noResult": [
 		"Try again, genius.",

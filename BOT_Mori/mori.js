@@ -72,7 +72,7 @@ client.on('ready', async () => {
 		console.log("Trying to revive...");
 		shared.OnServerData("reviveAll", () => { //TODO: server-side reviveAll command
 			console.log("Revive successful");
-			shared.SendPublicMessage(client, process.env.TAVERN_CHANNEL_ID, dialog("reviveAll"));
+			shared.SendPublicMessage(client, process.env.TAVERN_CHANNEL_ID, dialog("reviveAll")); //TODO: add a reference to Alexis in the dialog here
 		});
 		resetInventory(itemCount);
 	});
@@ -123,6 +123,10 @@ function processBasicCommands(client, message) {
 			if (shared.IsAdmin(client, message.author)) {
 				shared.SendPublicMessage(client, message.author, message.channel, "PONG!");
 			}
+			return true;
+
+		case "help":
+			printTreatments(message.author, message.channel);
 			return true;
 
 		case "heal":
@@ -185,7 +189,7 @@ function printTreatments(user, channel) {
 			.setDescription(treatmentMessage)
 			.setFooter(`${user.username}, you have ${stats.wallet} crystals. Use !heal [OPTION] to buy.`);
 
-		shared.SendPublicMessage(client, user, channel, dialog("heal"));
+		shared.SendPublicMessage(client, user, channel, dialog("healHeading"));
 		channel.send({ embed });
 	}
 
@@ -195,6 +199,14 @@ function printTreatments(user, channel) {
 function processHealCommand(user, channel, args) {
 	//get the selected treatment
 	let selectedTreatment = availableTreatments.filter((treatment) => treatment[0].toLowerCase() === args[0].toLowerCase())[0];
+
+	if (!selectedTreatment) {
+		shared.SendPublicMessage(client, user, channel, dialog("healFailure"));
+	}
+
+	let handleResponse = function(response) {
+		shared.SendPublicMessage(client, user, channel, dialog(response, selectedTreatment[0], selectedTreatment[1], selectedTreatment[2]));
+	}
 
 	if (selectedTreatment[3]) { //should it be a revive command?
 		shared.OnServerData("revive", handleResponse, user.id, selectedTreatment[1], selectedTreatment[2]);

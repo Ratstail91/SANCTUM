@@ -315,7 +315,18 @@ async function handleRevive({ data }, fn) {
 	//data[1] = cost
 	//data[2] = amount (potentially percentage)
 
-	//TODO
+	//WARNING: copy/paste
+	let query = `SELECT health, maxHealth, wallet FROM users WHERE userID=${data[0]} LIMIT 1;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+
+		//not knocked out
+		if (result[0].health != 0) {
+			return fn("healNotKnockedOut");
+		}
+
+		return innerHeal(data, fn, result, "revive");
+	});
 }
 
 //handle healing a specific player
@@ -325,7 +336,53 @@ async function handleHeal({ data }, fn) {
 	//data[1] = cost
 	//data[2] = amount (potentially percentage)
 
-	//TODO
+	let query = `SELECT health, maxHealth, wallet FROM users WHERE userID=${data[0]} LIMIT 1;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+
+		//not knocked out
+		if (result[0].health == 0) {
+			return fn("healKnockedOut");
+		}
+
+		return innerHeal(data, fn, result, "heal");
+	});
+}
+
+//avoid copy/paste in the healing functions
+function innerHeal(data, fn, result, logType = 'unknown') {
+	//not enough money
+	if (result[0].wallet < data[1]) {
+		return fn("healNotEnoughInWallet");
+	}
+
+	if (result[0].health == result[0].maxHealth) {
+		return fn("healFullHealth");
+	}
+
+	//parse out the amount that needs regening
+	let regenAmount = data[2];
+
+	if (regenAmount[regenAmount.length-1] == "%") {
+		regenAmount = regenAmount.slice(0, -1);
+		regenAmount = Math.floor(parseFloat(regenAmount) / 100 * result[0].maxHealth);
+	} else {
+		regenAmount = Math.floor(parseFloat(regenAmount));
+	}
+
+	//actually do the regen
+	let newHealth = Math.min(result[0].health + regenAmount, result[0].maxHealth); //I tried making this an SQL function, didn't work
+	let query = `UPDATE users SET health = ${newHealth}, wallet = wallet - ${data[1]} WHERE userID='${data[0]}' LIMIT 1;`;
+	return dbConnection.query(query, (err, result) => {
+		if (err) throw err;
+
+		//logging touch
+		dbConnection.query(`SELECT health, maxHealth FROM users WHERE userID='${data[0]}' LIMIT 1;`, (err, result) => {
+			dbLog(data[0], `health ${logType}`, `healed ${regenAmount} - ${result[0].health}/${result[0].maxHealth}`);
+		});
+
+		return fn("healSuccess");
+	});
 }
 
 //utility functions
@@ -365,7 +422,7 @@ function calculateTimeAgo(seconds) {
 	}
 
 	if (seconds < 60 * 60) {
-		return "this hour";
+		return "just this hour";
 	}
 
 	if (seconds < 60 * 60 * 24) {
