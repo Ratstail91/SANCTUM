@@ -175,7 +175,7 @@ async function handleTransfer({ data }, fn) {
 
 		//check the recipient is real
 		let query = "SELECT * FROM users WHERE userID = ? LIMIT 1;";
-		return dbConnection.query(query, [data[0]], (err, result) => {
+		return dbConnection.query(query, [data[1]], (err, result) => {
 			if (err) throw err;
 
 			if (result.length == 0) {
