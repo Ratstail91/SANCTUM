@@ -4,6 +4,52 @@ let dataRequest = require("../Shared/data_request");
 let discord = require('discord.js');
 let shared = require("../Shared/shared");
 
+//TODO: convert all doc comments to JSDoc format
+
+//CheckValidDisplay
+//client - discord.js client
+//member - discord.js member OR username
+//channel - discord.js channel OR channel name
+//checkRole - check the member's role or not
+exports.CheckValidDisplay = function(client, member, channel, checkRole) { //See if the bot should display its message
+	//handle member strings
+	if (typeof(member) === "string") {
+		//get the member
+		let user = client.users.find(item => item.username === member || item.id === member);
+		let guild = client.guilds.get(process.env.SANCTUM_ID);
+		member = guild.members.get(user.id);
+	}
+
+	//handle channel strings
+	if (typeof(channel) === "string") {
+		channel = client.channels.find(item => item.name === channel || item.id === channel);
+	}
+
+	switch(client.user.username) {
+		//NOTE: some copy/paste here that could be fixed
+		case process.env.GROUP_A_LEADER_NAME:
+			if (checkRole) {
+				return channel.id == process.env.GROUP_A_CHANNEL_ID && member.roles.has(process.env.GROUP_A_ROLE);
+			} else {
+				return channel.id == process.env.GROUP_A_CHANNEL_ID;
+			}
+
+		case process.env.GROUP_B_LEADER_NAME:
+			if (checkRole) {
+				return channel.id == process.env.GROUP_B_CHANNEL_ID && member.roles.has(process.env.GROUP_B_ROLE);
+			} else {
+				return channel.id == process.env.GROUP_B_CHANNEL_ID;
+			}
+
+		case process.env.GROUP_C_LEADER_NAME:
+			if (checkRole) {
+				return channel.id == process.env.GROUP_C_CHANNEL_ID && member.roles.has(process.env.GROUP_C_ROLE);
+			} else {
+				return channel.id == process.env.GROUP_C_CHANNEL_ID;
+			}
+	}
+}
+
 //ProcessGameplayCommands
 //client - discord.js client
 //message - discord.js message

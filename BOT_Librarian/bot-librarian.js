@@ -24,12 +24,7 @@ dialog = function(baseDialog) {
 			key += arg;
 		}
 
-		let result = baseDialog(key, ...data);
-
-		if (result === "") {
-			return baseDialog("noResult");
-		}
-		return result;
+		return baseDialog(key, ...data);
 	}
 }(dialog);
 

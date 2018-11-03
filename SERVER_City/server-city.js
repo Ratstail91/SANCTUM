@@ -42,6 +42,7 @@ io.on("connection", async (socket) => {
 		console.log(socket.client.username + " disconnected");
 	});
 
+	socket.on("serverPing", handleServerPing);
 	socket.on("updateStamina", handleUpdateStamina);
 	socket.on("conversion", handleConversion);
 	socket.on("checkin", handleCheckin);
@@ -58,6 +59,11 @@ io.on("connection", async (socket) => {
 //listen
 server.listen(process.env.SERVER_PORT);
 console.log("listening on port " + process.env.SERVER_PORT);
+
+//respond to a ping with a pong
+async function handleServerPing({ data }, fn) {
+	return fn("SERVER PONG!");
+}
 
 //update the playerbase's stamina on command
 async function handleUpdateStamina({ userID, data }) {
@@ -116,7 +122,7 @@ async function handleConversion({ data }, fn) {
 }
 
 //handle checkin, and add 1 XP
-async function handleCheckin({ data }, fn) {
+async function handleCheckin({ data }, fn) { //TODO: You already checked in with me today, you should check in again after X hours
 	//handle checkins (grant crystal bonus)
 
 	//arguments to fn: ["available", time since last checkin], randomAmount
@@ -124,7 +130,6 @@ async function handleCheckin({ data }, fn) {
 	let randomAmount = calcRandom.Random(4, 9);
 
 	let query = "SELECT TIME_TO_SEC(TIMEDIFF(NOW(), lastCheckin)) FROM users WHERE userID = ? LIMIT 1;";
-
 	return dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 
@@ -150,7 +155,7 @@ async function handleWallet({ data }, fn) {
 	dbConnection.query(query, [data[0]], (err, result) => {
 		if (err) throw err;
 		dbLog(data[0], "wallet query", "result: " + result[0].wallet);
-		fn(result[0].wallet);
+		return fn(result[0].wallet);
 	});
 }
 

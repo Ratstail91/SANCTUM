@@ -24,14 +24,11 @@ dialog = function(baseDialog) {
 			key += arg;
 		}
 
-		let result = baseDialog(key, ...data);
-
-		if (result === "") {
-			return dialog("noResult", key);
-		}
-		return result;
+		return baseDialog(key, ...data);
 	}
 }(dialog);
+
+//TODO: noResult needs a better dialog message for each faction leader
 
 //handle errors
 client.on('error', console.error);
@@ -136,10 +133,13 @@ function processBasicCommands(client, message) {
 		case "ping":
 			if (shared.IsAdmin(client, message.author)) {
 				shared.SendPublicMessage(client, message.author, message.channel, "PONG!");
+				shared.OnServerData("serverPing", (response) => {
+					shared.SendPublicMessage(client, message.author, message.channel, response);
+				});
 			}
 			return true;
 
-		case "wallet": //DEBUGGING TODO: add a ping command for the server
+		case "wallet"://TODO: remove this from the server and ADAM
 			shared.OnServerData("wallet", (amount) => {
 				shared.SendPublicMessage(client, message.author, message.channel, "Wallet: " + amount);
 			}, message.author.id);

@@ -23,12 +23,7 @@ dialog = function(baseDialog) {
 			key += arg;
 		}
 
-		let result = baseDialog(key, ...data);
-
-		if (result === "") {
-			return dialog("noResult", key);
-		}
-		return result;
+		return baseDialog(key, ...data);
 	}
 }(dialog);
 
@@ -83,7 +78,7 @@ client.on('message', async message => {
 	}
 
 	//check if can continue (used primarily by the faction leaders)
-	if (!shared.CheckValidDisplay(client, message.member, message.channel)) {
+	if (!core.CheckValidDisplay(client, message.member, message.channel)) {
 		return;
 	}
 

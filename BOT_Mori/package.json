@@ -4,10 +4,10 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "forever -o forever.log -e error.log start mori.js",
-    "restart": "forever -o forever.log -e error.log restart mori.js",
-    "stop": "forever stop mori.js",
-    "node": "node mori.js"
+    "start": "forever -o forever.log -e error.log start bot-mori.js",
+    "restart": "forever -o forever.log -e error.log restart bot-mori.js",
+    "stop": "forever stop bot-mori.js",
+    "node": "node bot-mori.js"
   },
   "author": "",
   "license": "ISC",

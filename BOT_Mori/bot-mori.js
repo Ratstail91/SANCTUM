@@ -13,17 +13,6 @@ let shared = require("../Shared/shared");
 //dialog system
 let dialog = shared.GenerateDialogFunction(require("./dialog.json"));
 
-//dialog decorator
-dialog = function(baseDialog) {
-	return function(key, ...data) {
-		let result = baseDialog(key, ...data);
-		if (result === "") {
-			return baseDialog("noResult");
-		}
-		return result;
-	}
-}(dialog);
-
 //global settings
 const itemCount = 3;
 const treatments = [

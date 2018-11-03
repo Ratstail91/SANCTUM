@@ -4,10 +4,10 @@
   "description": "",
   "main": "city.js",
   "scripts": {
-    "start": "forever -o forever.log -e error.log start city.js",
-    "restart": "forever -o forever.log -e error.log restart city.js",
-    "stop": "forever stop city.js",
-    "node": "node city.js"
+    "start": "forever -o forever.log -e error.log start server-city.js",
+    "restart": "forever -o forever.log -e error.log restart server-city.js",
+    "stop": "forever stop server-city.js",
+    "node": "node server-city.js"
   },
   "author": "",
   "license": "ISC",

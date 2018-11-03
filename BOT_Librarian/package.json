@@ -4,10 +4,10 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "forever -o forever.log -e error.log start librarian.js",
-    "restart": "forever -o forever.log -e error.log restart librarian.js",
-    "stop": "forever stop librarian.js",
-    "node": "node librarian.js"
+    "start": "forever -o forever.log -e error.log start bot-librarian.js",
+    "restart": "forever -o forever.log -e error.log restart bot-librarian.js",
+    "stop": "forever stop bot-librarian.js",
+    "node": "node bot-librarian.js"
   },
   "author": "",
   "license": "ISC",
