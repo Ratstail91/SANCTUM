@@ -1,7 +1,12 @@
 {
 	"upgradeHeading": "Hey buddy! Here's what we can upgrade ASAP!",
 
-	"upgradeText": "STR - :cannister: **1**\n```Permanently upgrades your Strength by 1, so you can hit them Ravagers harder.```\nSPD - :cannister: **1**\n```Permanently upgrades your Speed by 1, so you can get hit less in battle.```\nSTAM - :cannister: **1**\n```Permanently upgrades your Max Stamina by 1, so you can hit more Ravagers.```\nHP - :cannister: **1**\n```Permanently upgrades your Max HP by 10, so you can can take those beatings like a champ.```",
+	"upgradeText": "STR - :cannister: **1**\n```Permanently upgrades your Strength by 1, so you can hit them Ravagers harder.```\nSPD - :cannister: **1**\n```Permanently upgrades your Speed by 1, so you can get hit less in battle.```\nSTAM - :cannister: **1**\n```Permanently upgrades your Max Stamina by 1, so you can hit more Ravagers.```\nHP - :cannister: **1**\n```Permanently upgrades your Max HP by 10, so you can take those beatings like a champ.```",
+
+	"upgradeSuccess": "Sweet! I used your Nanotech Cannister to upgrade your **{1}** by {2}!",
+	"upgradeFailure": "Sorry, no can do right now. Come back later though, ok?",
+	"upgradeNotEnoughPoints": "Hey now, you don't have that many cannisters.",
+	"upgradeParseError": "Believe me, I wish I could upgrade things like that.",
 
 	"noResult": "I have no idea what you just said."
 }

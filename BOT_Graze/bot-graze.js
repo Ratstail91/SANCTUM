@@ -111,7 +111,7 @@ function printUpgrades(user, channel) {
 			.setColor(client.guilds.get(process.env.SANCTUM_ID).roles.find(role => role.name === "NPC").color) //NOTE: probably a better way to do this
 			.setTitle("Nanotech Upgrades")
 			.setDescription(dialog("upgradeText"))
-			.setFooter(`${user.username}, you have ${stats.wallet} crystals. Use !upgrade [OPTION] to buy.`); //TODO: move this to dialog?
+			.setFooter(`${user.username}, you have ${stats.upgradePoints} cannisters. Use !upgrade [OPTION] to upgrade.`); //TODO: move this to dialog?
 
 		shared.SendPublicMessage(client, user, channel, dialog("upgradeHeading"));
 		channel.send({ embed });
@@ -120,6 +120,36 @@ function printUpgrades(user, channel) {
 	shared.OnServerData("userStats", handleResponse, user.id);
 }
 
-function processUpgradeCommand(uset, channel, args) {
-	//TODO
+function processUpgradeCommand(user, channel, args) {
+ 	//parse the stat to upgrade
+	let statToUpgrade;
+	switch(String(args[0]).toLowerCase()) {
+		case "str":
+		case "strength":
+			statToUpgrade = "strength";
+			break;
+		case "spd":
+		case "speed":
+			statToUpgrade = "speed";
+			break;
+		case "stam":
+		case "stamina":
+			statToUpgrade = "stamina";
+			break;
+		case "hp":
+		case "health":
+			statToUpgrade = "health";
+			break;
+	}
+
+	if (typeof(statToUpgrade) === "undefined") {
+		shared.SendPublicMessage(client, user, channel, dialog("upgradeParseError"));
+		return;
+	}
+
+	let handleResponse = function(response, suffix) {
+		shared.SendPublicMessage(client, user, channel, dialog(response, statToUpgrade, suffix));
+	}
+
+	shared.OnServerData("upgrade", handleResponse, user.id, statToUpgrade);
 }

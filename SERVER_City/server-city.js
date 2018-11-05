@@ -46,7 +46,7 @@ io.on("connection", async (socket) => {
 	socket.on("updateStamina", handleUpdateStamina);
 	socket.on("conversion", handleConversion);
 	socket.on("checkin", handleCheckin);
-	socket.on("wallet", handleWallet); //TODO: server ping from ADAM
+	socket.on("wallet", handleWallet);
 	socket.on("transfer", handleTransfer);
 	socket.on("userStats", handleUserStats);
 	socket.on("addXP", handleAddXP);
@@ -54,6 +54,7 @@ io.on("connection", async (socket) => {
 	socket.on("reviveAll", handleReviveAll);
 	socket.on("revive", handleRevive);
 	socket.on("heal", handleHeal);
+	socket.on("upgrade", handleUpgrade);
 });
 
 //listen
@@ -387,6 +388,48 @@ function innerHeal(data, fn, result, logType = "unknown") {
 		});
 
 		return fn("healSuccess");
+	});
+}
+
+async function handleUpgrade({ data }, fn) {
+	console.log("received an upgrade request...");
+	//data[0] = user ID
+	//data[1] = statToUpgrade
+
+	//fn parameters: ["upgradeSuccess", "upgradeFailure", "upgradeNotEnoughPoints"], suffix
+
+	//check the upgrade points
+	let query = "SELECT upgradePoints FROM users WHERE userID = ? LIMIT 1;";
+	return dbConnection.query(query, [data[0]], (err, result) => {
+		if (err) throw err;
+
+		if (result[0].upgradePoints == 0) {
+			return fn("upgradeNotEnoughPoints");
+		}
+
+		//determine the upgrade query
+		let query = "UPDATE users SET ";
+		switch(data[1]) {
+			case "strength":
+				query += "strength = strength + 1, ";
+				break;
+			case "speed":
+				query += "speed = speed + 1, ";
+				break;
+			case "stamina":
+				query += "maxStamina = maxStamina + 1, stamina = stamina + 1, ";
+				break;
+			case "health":
+				query += "maxHealth = maxHealth + 10, health = health + 10, ";
+				break;
+		}
+		query += "upgradePoints = upgradePoints - 1 WHERE userID = ? LIMIT 1;";
+
+		return dbConnection.query(query, data[0], (err, result) => {
+			if (err) throw err;
+			dbLog(data[0], "upgrade", "upgrade " + data[1]);//TODO: better log
+			return fn("upgradeSuccess", data[1] === "health" ? "10 points" : "1 point");
+		});
 	});
 }
 
