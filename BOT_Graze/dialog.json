@@ -1,3 +1,7 @@
 {
+	"upgradeHeading": "Hey buddy! Here's what we can upgrade ASAP!",
+
+	"upgradeText": "STR - :cannister: **1**\n```Permanently upgrades your Strength by 1, so you can hit them Ravagers harder.```\nSPD - :cannister: **1**\n```Permanently upgrades your Speed by 1, so you can get hit less in battle.```\nSTAM - :cannister: **1**\n```Permanently upgrades your Max Stamina by 1, so you can hit more Ravagers.```\nHP - :cannister: **1**\n```Permanently upgrades your Max HP by 10, so you can can take those beatings like a champ.```",
+
 	"noResult": "I have no idea what you just said."
 }

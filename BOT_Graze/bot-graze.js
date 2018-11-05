@@ -37,6 +37,9 @@ client.on('ready', async () => {
 	}
 
 	console.log("Logged in as: " + client.user.username + " - " + client.user.id);
+
+	//connect to the server
+	shared.ConnectToServer(client.user.username, process.env.SERVER_ADDRESS, process.env.SERVER_PORT, process.env.SERVER_PASS_KEY);
 });
 
 // Create an event listener for messages
@@ -82,10 +85,41 @@ function processBasicCommands(client, message) {
 			}
 			return true;
 
+		//TODO: avoid help command collisions
+
+		case "upgrade":
+			if (!args[0]) {
+				printUpgrades(message.author, message.channel);
+			} else {
+				processUpgradeCommand(message.author, message.channel, args);
+			}
+			return true;
+
 		default:
 			shared.SendPublicMessage(client, message.author, message.channel, dialog(command));
 			return true;
 	}
 
 	return false;
+}
+
+function printUpgrades(user, channel) {
+	let handleResponse = function(stats) {
+		//create the embed
+		let embed = new discord.RichEmbed()
+			.setAuthor(client.user.username, client.user.avatarURL)
+			.setColor(client.guilds.get(process.env.SANCTUM_ID).roles.find(role => role.name === "NPC").color) //NOTE: probably a better way to do this
+			.setTitle("Nanotech Upgrades")
+			.setDescription(dialog("upgradeText"))
+			.setFooter(`${user.username}, you have ${stats.wallet} crystals. Use !upgrade [OPTION] to buy.`); //TODO: move this to dialog?
+
+		shared.SendPublicMessage(client, user, channel, dialog("upgradeHeading"));
+		channel.send({ embed });
+	}
+  
+	shared.OnServerData("userStats", handleResponse, user.id);
+}
+
+function processUpgradeCommand(uset, channel, args) {
+	//TODO
 }

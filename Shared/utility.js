@@ -34,8 +34,17 @@ exports.GenerateDialogFunction = function(dialogJson) {
 			result = dialogJson[key];
 		}
 
+		//handle no result
 		if (typeof(result) === "undefined") {
-			return dialogJson["noResult"];
+			const noResult = dialogJson["noResult"];
+			if (typeof(noResult) === "undefined") {
+				return ""; //nothing at all to show
+			}
+			if (Array.isArray(noResult)) {
+				result = noResult[Math.floor(Math.random() * noResult.length)];
+			} else {
+        result = noResult;
+      }
 		}
 
 		let counter = 0;
